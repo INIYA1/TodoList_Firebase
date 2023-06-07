@@ -1,75 +1,104 @@
-import { View, Text ,FlatList,StyleSheet,TextInput,TouchableOpacity,Keyboard} from 'react-native'
-import React,{useState,useEffect} from 'react';
-import {firebase} from '../../config';
-import {FontAwesome} from '@expo/vector-icons';
-import {useNavigation} from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, TextInput, TouchableOpacity } from 'react-native';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/database';
+import { FontAwesome } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { HomeScreenStyle } from '../styles/HomeScreenStyle';
 
-const Home = () =>{
+import { db } from '../../config'; // Import the Firebase database instance from your config.js file
 
-    const [todos,setTodos] = useState([]);
-    const todoRef = firebase.firestore().collection('todos')
-    const [ addData,setAddData] = useState('');
-    const navigation = useNavigation ();
+const Home = () => {
+  const [todos, setTodos] = useState([]);
+  const [addData, setAddData] = useState('');
+  const navigation = useNavigation();
 
-    // FETCH OR READ THE DATA FROM FIREBASE
+  useEffect(() => {
+    const todoRef = firebase.database().ref('todos'); // Use the database reference from your config.js file
+    todoRef.on('value', (snapshot) => {
+      const todosData = snapshot.val();
+      if (todosData) {
+        const todosArray = Object.entries(todosData).map(([id, data]) => ({
+          id,
+          ...data,
+        }));
+        setTodos(todosArray);
+      }
+    });
+  }, []);
 
-    useEffect(()=>{
-        todoRef
-        .orderBy('createdAt','desc')
-        .onSnapshot(
-            querySnapshot =>{
-                const todos =[]
-                querySnapshot.forEach((doc)=>{
-                    const {heading} = doc.data()
-                    todos.push({
-                        id:doc.id,
-                        heading,
-                    })
-                })
-                setTodos(todos)
-            }
-        )
-    },[])
-    // DELETE A TODO FROM FIRESTORE DB
+  const deleteTodo = (id) => {
+    const todoRef = firebase.database().ref(`todos/${id}`); // Use the database reference from your config.js file
+    todoRef
+      .remove()
+      .then(() => {
+        alert('Deleted Successfully');
+      })
+      .catch((error) => {
+        alert(error.message);
+      });
+  };
 
-
-    const deleteTodo = (todos)=>{
-        todoRef
-        .doc(todos.id)
-        .delete()
-        .then(()=>{
-            alert('Deleted Successfully')
+  const addTodo = () => {
+    if (addData && addData.length > 0) {
+      const todoRef = firebase.database().ref('todos'); // Use the database reference from your config.js file
+      const newTodoRef = todoRef.push();
+      newTodoRef
+        .set({
+          heading: addData,
         })
-        .catch(error=>{
-            alert(error , 'error message')
+        .then(() => {
+          setAddData(''); // Clear the input field after adding a new todo
         })
+        .catch((error) => {
+          alert(error.message);
+        });
     }
-// ADD TODO
-const addTodo =()=>{
-    // Check if we have a todo
-    if (addData && addData.length>0){
-        const timestamp = firebase.firestore.FieldValue.serverTimestamp();
-        const data ={
-            heading : addData,
-            createdAt : timestamp
-        };
-        todoRef
-        .add(data)
-        .then(()=>{
-            setAddData('')
-            // release Keyboard
-            Keyboard.dismiss();   
-        })
-        .catch((error)=>{
-            alert(error)
-        })
-    }
-}
-    // return(
-    //     <View>
-    //         <Text>hi</Text>
-    //     </View>
-    // )
-}
+  };
 
-export default Home
+  return (
+    <View style={{ flex: 1 }}>
+      <View style={HomeScreenStyle.formContainer}>
+        <TextInput
+          style={HomeScreenStyle.input}
+          placeholder="Add a New Todo"
+          placeholderTextColor="black"
+          onChangeText={(text) => setAddData(text)} // Update the setAddData function argument to 'text'
+          value={addData}
+          underlineColorAndroid="transparent"
+          autoCapitalize="none"
+        />
+        <TouchableOpacity style={HomeScreenStyle.button} onPress={addTodo}>
+          <Text style={HomeScreenStyle.buttonText}> ADD </Text>
+        </TouchableOpacity>
+      </View>
+      <FlatList
+        data={todos}
+        numColumns={1}
+        renderItem={({ item }) => (
+          <View style={HomeScreenStyle.container}>
+            <FontAwesome
+              name="trash-o"
+              color="red"
+              onPress={() => deleteTodo(item.id)}
+              style={HomeScreenStyle.todoIcon}
+            />
+            <TouchableOpacity
+              style={HomeScreenStyle.arrowbtn}
+              onPress={() => navigation.navigate('Details', { item })}
+            >
+              <Text> {"=>"} </Text>
+            </TouchableOpacity>
+            <View style={HomeScreenStyle.innerContainer}>
+              <Text style={HomeScreenStyle.itemHeading}>
+                {item.heading[0].toUpperCase() + item.heading.slice(1)}
+              </Text>
+            </View>
+          </View>
+        )}
+      />
+    </View>
+  );
+};
+
+export default Home;
