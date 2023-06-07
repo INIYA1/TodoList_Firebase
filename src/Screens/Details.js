@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
 import { useNavigation } from '@react-navigation/native';
+import { DetailsScreenStyle } from '../styles/DetailsScreenStyle';
 
 const Details = ({ route }) => {
   const todoRef = firebase.database().ref('todos');
@@ -25,14 +26,14 @@ const Details = ({ route }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={DetailsScreenStyle.container}>
       <TextInput
-        style={styles.textField}
+        style={DetailsScreenStyle.textField}
         onChangeText={setTextHeading}
         value={textHeading}
         placeholder="Update todo"
       />
-      <TouchableOpacity style={styles.buttonUpdate} onPress={updateTodo}>
+      <TouchableOpacity style={DetailsScreenStyle.buttonUpdate} onPress={updateTodo}>
         <Text>UPDATE TODO</Text>
       </TouchableOpacity>
     </View>
@@ -41,28 +42,4 @@ const Details = ({ route }) => {
 
 export default Details;
 
-const styles = StyleSheet.create({
-  container: {
-    marginTop: 80,
-    marginLeft: 15,
-    marginRight: 15,
-  },
-  textField: {
-    marginBottom: 10,
-    padding: 10,
-    fontSize: 15,
-    color: '#000000',
-    backgroundColor: 'white',
-    borderRadius: 5,
-  },
-  buttonUpdate: {
-    marginTop: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    borderRadius: 4,
-    elevation: 10,
-    backgroundColor: '#0de065',
-  },
-});
+
